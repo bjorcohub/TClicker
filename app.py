@@ -173,7 +173,8 @@ if "Data-sim i ruter" in st.session_state.upgrades and st.session_state.has_rout
     blocked = now < st.session_state.router_blocked_until
 
     if blocked:
-        st.error("🚫 Ruter låst pga virus! Vent 60 sekunder.")
+        time_left = int(st.session_state.router_blocked_until - now)
+        st.error(f"🚫 Ruter låst pga virus! Vent {time_left} sekunder.")
     elif since >= cooldown:
         if st.button("📡 Aktiver Ruter Boost (30 sek)"):
             st.session_state.router_cooldown = now
@@ -198,7 +199,8 @@ if "Tvilling" in st.session_state.upgrades and st.session_state.has_second_phone
     blocked = now < st.session_state.tvilling_blocked_until
 
     if blocked:
-        st.error("🚫 Tvilling låst pga virus! Vent 60 sekunder.")
+        time_left = int(st.session_state.tvilling_blocked_until - now)
+        st.error(f"🚫 Tvilling låst pga virus! Vent {time_left} sekunder.")
     elif since >= cooldown:
         if st.button("📳 Aktiver Tvilling Boost (30 sek dobbel klikk)"):
             st.session_state.tvilling_cooldown = now
