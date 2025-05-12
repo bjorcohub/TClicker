@@ -84,7 +84,7 @@ if st.button("📲 Klikk for datapakke"):
 current_index = next(i for i, s in enumerate(subscriptions) if s[0] == st.session_state.subscription_level)
 if current_index + 1 < len(subscriptions):
     next_sub = subscriptions[current_index + 1]
-    st.info(f"🎯 Neste abonnement: {next_sub[0]} ({next_sub[1]} datapakker)")
+    st.info(f"🎯 Neste abonnement: {next_sub[0]} ({next_sub[1]} datapakker) – Gir {next_sub[2]} auto-inntekt/sek")
 else:
     st.success("🏆 Du har nådd Ubegrenset Maksimal!")
 
@@ -92,7 +92,7 @@ else:
 if current_index + 1 < len(subscriptions):
     next_sub = subscriptions[current_index + 1]
     if st.session_state.data >= next_sub[1]:
-        if st.button(f"⬆️ Oppgrader til {next_sub[0]} ({next_sub[1]} datapakker)"):
+        if st.button(f"⬆️ Oppgrader til {next_sub[0]} ({next_sub[1]} datapakker)", help=f"Gir {next_sub[2]} auto-inntekt/sek"):
             st.session_state.data -= next_sub[1]
             st.session_state.subscription_level = next_sub[0]
             st.session_state.auto_income = next_sub[2]
@@ -104,9 +104,9 @@ st.subheader("📱 Telefoner")
 if not st.session_state.has_second_phone:
     if st.session_state.phone_index + 1 < len(phones):
         next_phone = phones[st.session_state.phone_index + 1]
-        st.info(f"📶 Neste telefon: {next_phone[0]} ({next_phone[1]} datapakker)")
+        st.info(f"📶 Neste telefon: {next_phone[0]} ({next_phone[1]} datapakker) – Gir {next_phone[2]} per klikk")
         if st.session_state.data >= next_phone[1]:
-            if st.button(f"Kjøp {next_phone[0]} ({next_phone[1]})"):
+            if st.button(f"Kjøp {next_phone[0]} ({next_phone[1]})", help=f"Gir {next_phone[2]} datapakker per klikk"):
                 st.session_state.data -= next_phone[1]
                 st.session_state.phone_index += 1
                 new_power = phones[st.session_state.phone_index][2]
@@ -121,7 +121,7 @@ else:
 if "Tvilling" in st.session_state.upgrades and not st.session_state.has_second_phone:
     phone2_price = 2000
     if st.session_state.data >= phone2_price:
-        if st.button(f"📱 Kjøp 2. telefon for Tvilling ({phone2_price})"):
+        if st.button(f"📱 Kjøp 2. telefon for Tvilling ({phone2_price})", help="Nødvendig for å aktivere Tvilling – dobler klikk"):
             st.session_state.data -= phone2_price
             st.session_state.has_second_phone = True
             st.session_state.tvilling_click_boost = 2
@@ -135,7 +135,7 @@ upcoming_upgrades = []
 for name, (cost, desc) in extras.items():
     if name not in st.session_state.upgrades:
         if st.session_state.data >= cost:
-            if st.button(f"Kjøp {name} ({cost}) - {desc}"):
+            if st.button(f"Kjøp {name} ({cost})", help=desc):
                 st.session_state.data -= cost
                 st.session_state.upgrades.add(name)
                 if name == "Nettvern":
@@ -177,5 +177,5 @@ if "Data-sim i ruter" in st.session_state.upgrades and st.session_state.has_rout
         st.caption(f"⏳ Ruter nedkjøling: {remaining} sek")
 
 # Show current phone
-st.caption(f"📱 Nåværende telefon: {phones[st.session_state.phone_index][0]}")
+st.caption(f"📱 Nåværende telefon: {phones[st.session_state.phone_index][0]} ({phones[st.session_state.phone_index][2]} per klikk uten boost)")
 st.caption("Laget av deg – Telenor Clicker")
