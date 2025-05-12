@@ -1,4 +1,3 @@
-
 import streamlit as st
 import time
 import random
@@ -25,6 +24,10 @@ if 'data' not in st.session_state:
     st.session_state.tvilling_cooldown = 0
     st.session_state.tvilling_blocked = False
     st.session_state.safe_protection = 0
+
+# Testknapp for å få 1000 datapakker
+if st.button("🐞 Gi meg 1000 datapakker (TEST)"):
+    st.session_state.data += 1000
 
 # Subscriptions, phones og upgrades definisjoner (kortet her for plass)
 subscriptions = [("Kontantkort", 0, 1), ("Fast 2GB", 50, 1), ("Fast 5GB", 200, 3), ("Fast 10GB", 500, 6),
