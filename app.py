@@ -6,11 +6,6 @@ import random
 st.set_page_config(page_title="Telenor Clicker", layout="centered")
 st.title("📱 Telenor Clicker")
 
-# Testknapp for raskere utvikling
-if st.button("💾 Gi meg 1000 datapakker (test)"):
-    st.session_state.data += 1000
-    st.success("Du fikk 1000 datapakker!")
-
 # --- INIT STATE ---
 if 'data' not in st.session_state:
     st.session_state.data = 0
