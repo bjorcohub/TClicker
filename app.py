@@ -72,7 +72,8 @@ clicks_per_minute = (st.session_state.clicks / click_elapsed * 60) if click_elap
 # Show metrics
 st.metric("📦 Datapakker", int(st.session_state.data))
 st.metric("🖱️ Klikk per minutt", f"{clicks_per_minute:.1f}")
-st.metric("🔘 Datapakker per klikk", f"{st.session_state.click_power * st.session_state.tvilling_click_boost:.1f}")
+st.metric("🌀 Auto-inntekt per sekund", f"{st.session_state.auto_income:.1f}")
+st.metric("📲 Datapakker per klikk", f"{st.session_state.click_power * st.session_state.tvilling_click_boost:.1f}")
 
 # Clicking button
 if st.button("📲 Klikk for datapakke"):
