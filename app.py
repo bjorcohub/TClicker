@@ -12,6 +12,8 @@ if 'data' not in st.session_state:
     st.session_state.subscription_level = "Kontantkort"
     st.session_state.upgrades = set()
     st.session_state.last_update = time.time()
+    st.session_state.clicks = 0
+    st.session_state.click_start_time = time.time()
 
 # Subscription tiers
 subscriptions = [
@@ -42,13 +44,27 @@ elapsed = now - st.session_state.last_update
 st.session_state.data += elapsed * st.session_state.auto_income
 st.session_state.last_update = now
 
+# Calculate clicks per minute
+click_elapsed = now - st.session_state.click_start_time
+clicks_per_minute = (st.session_state.clicks / click_elapsed * 60) if click_elapsed > 0 else 0
+
 # UI Layout
 st.metric("📦 Datapakker", int(st.session_state.data))
-st.button("📲 Klikk for datapakke", on_click=lambda: setattr(
-    st.session_state, 'data', st.session_state.data + st.session_state.click_power))
+st.metric("🖱️ Klikk per minutt", f"{clicks_per_minute:.1f}")
+
+if st.button("📲 Klikk for datapakke"):
+    st.session_state.data += st.session_state.click_power
+    st.session_state.clicks += 1
+
+# Show next subscription goal
+current_index = next(i for i, s in enumerate(subscriptions) if s[0] == st.session_state.subscription_level)
+if current_index + 1 < len(subscriptions):
+    next_sub = subscriptions[current_index + 1]
+    st.info(f"🎯 Neste abonnement: {next_sub[0]} ({next_sub[1]} datapakker)")
+else:
+    st.success("🏆 Du har nådd Ubegrenset Maksimal!")
 
 # Upgrade subscription
-current_index = next(i for i, s in enumerate(subscriptions) if s[0] == st.session_state.subscription_level)
 if current_index + 1 < len(subscriptions):
     next_sub = subscriptions[current_index + 1]
     if st.session_state.data >= next_sub[1]:
@@ -58,25 +74,32 @@ if current_index + 1 < len(subscriptions):
             st.session_state.auto_income = next_sub[2]
             if "Min Sky" in st.session_state.upgrades and "Fast 2GB" not in next_sub[0]:
                 st.session_state.click_power = 2
-else:
-    st.success("🏆 Du har nådd Ubegrenset Maksimal!")
 
 st.subheader("🔧 Ekstrautstyr")
+upcoming_upgrades = []
 for name, (cost, desc) in extras.items():
-    if name not in st.session_state.upgrades and st.session_state.data >= cost:
-        if st.button(f"Kjøp {name} ({cost}) - {desc}"):
-            st.session_state.data -= cost
-            st.session_state.upgrades.add(name)
-            if name == "Nettvern":
-                st.session_state.auto_income *= 1.10
-            elif name == "Nettvern+":
-                st.session_state.auto_income *= 1.20
-            elif name == "Safe":
-                st.session_state.auto_income += 1
-            elif name == "Min Sky" and "Fast 2GB" not in st.session_state.subscription_level:
-                st.session_state.click_power = 2
-            elif name == "Se Hvem":
-                st.session_state.auto_income += 2
-            # Data-sim og Tvilling kan implementeres senere
+    if name not in st.session_state.upgrades:
+        if st.session_state.data >= cost:
+            if st.button(f"Kjøp {name} ({cost}) - {desc}"):
+                st.session_state.data -= cost
+                st.session_state.upgrades.add(name)
+                if name == "Nettvern":
+                    st.session_state.auto_income *= 1.10
+                elif name == "Nettvern+":
+                    st.session_state.auto_income *= 1.20
+                elif name == "Safe":
+                    st.session_state.auto_income += 1
+                elif name == "Min Sky" and "Fast 2GB" not in st.session_state.subscription_level:
+                    st.session_state.click_power = 2
+                elif name == "Se Hvem":
+                    st.session_state.auto_income += 2
+                # Data-sim og Tvilling kan implementeres senere
+        else:
+            upcoming_upgrades.append((name, cost, desc))
+
+if upcoming_upgrades:
+    st.subheader("🔜 Neste ekstrautstyr du kan spare til:")
+    for name, cost, desc in sorted(upcoming_upgrades, key=lambda x: x[1]):
+        st.text(f"{name} ({cost}) - {desc}")
 
 st.caption("Laget av deg – Telenor Clicker")
