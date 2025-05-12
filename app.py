@@ -149,15 +149,23 @@ for name, (cost, desc) in extras.items():
 
 # Ruter-boost
 cooldown = 60
-duration = 30
-since_ruter = now - st.session_state.router_cooldown
+boost_duration = 30
+now = time.time()
 virus_chance = 0.65 * (1 - st.session_state.safe_protection)
+
+# --- Ruter BOOST ---
+since_ruter = now - st.session_state.router_cooldown
+boost_active = 0 <= since_ruter <= boost_duration
+
 if "Data-sim i ruter" in st.session_state.upgrades and st.session_state.has_router:
     if st.session_state.router_blocked:
         remaining = int(cooldown - since_ruter)
-        st.error(f"🚫 Boost deaktivert pga virus. Tid igjen: {remaining} sek")
+        st.error(f"🚫 Ruter-boost deaktivert pga virus. Tid igjen: {remaining} sek")
         if remaining <= 0:
             st.session_state.router_blocked = False
+    elif boost_active:
+        remaining = int(boost_duration - since_ruter)
+        st.success(f"🚀 Ruter-boost aktiv! Tid igjen: {remaining} sek")
     elif since_ruter >= cooldown:
         if st.button("📡 Aktiver Ruter Boost"):
             st.session_state.router_cooldown = now
@@ -167,18 +175,23 @@ if "Data-sim i ruter" in st.session_state.upgrades and st.session_state.has_rout
                 if "Safe" not in st.session_state.upgrades:
                     st.info("💡 Kjøp 'Safe' for lavere virus-sjanse.")
             else:
-                st.session_state.auto_income *= 2
-                st.success("🚀 Ruter-boost aktiv!")
-# Tvilling-boost
+                st.success("✅ Ruter-boost aktiv i 30 sek")
+
+# --- Tvilling BOOST ---
 since_tvilling = now - st.session_state.tvilling_cooldown
+tvilling_boost_active = 0 <= since_tvilling <= boost_duration
+
 if "Tvilling" in st.session_state.upgrades and st.session_state.has_second_phone:
     if st.session_state.tvilling_blocked:
         remaining = int(cooldown - since_tvilling)
         st.error(f"📴 Tvilling-boost deaktivert pga virus. Tid igjen: {remaining} sek")
         if remaining <= 0:
             st.session_state.tvilling_blocked = False
+    elif tvilling_boost_active:
+        remaining = int(boost_duration - since_tvilling)
+        st.success(f"📶 Tvilling-boost aktiv! Tid igjen: {remaining} sek")
     elif since_tvilling >= cooldown:
-        if st.button("📱 Aktiver Tvilling Boost"):
+        if st.button("📲 Aktiver Tvilling Boost"):
             st.session_state.tvilling_cooldown = now
             if random.random() < virus_chance:
                 st.session_state.tvilling_blocked = True
@@ -186,6 +199,4 @@ if "Tvilling" in st.session_state.upgrades and st.session_state.has_second_phone
                 if "Safe" not in st.session_state.upgrades:
                     st.info("💡 Tips: Kjøp 'Safe' for lavere risiko.")
             else:
-                st.success("✅ Tvilling boost aktiv – dobbel klikk!")
-
-st.caption("🎮 Laget av deg – Telenor Clicker")
+                st.success("✅ Tvilling boost aktiv i 30 sek")
