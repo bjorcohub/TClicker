@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import random
 
 st.set_page_config(page_title="Telenor Clicker", layout="centered")
 st.title("📱 Telenor Clicker")
@@ -17,46 +18,48 @@ if 'data' not in st.session_state:
     st.session_state.phone_index = 0
     st.session_state.has_router = False
     st.session_state.router_cooldown = 0
+    st.session_state.router_blocked = False
     st.session_state.has_second_phone = False
     st.session_state.tvilling_click_boost = 1
+    st.session_state.safe_protection = 0
 
 # Subscription tiers
 subscriptions = [
     ("Kontantkort", 0, 1),
     ("Fast 2GB", 50, 1),
-    ("Fast 5GB", 200, 2),
-    ("Fast 10GB", 500, 4),
-    ("Ubegrenset Enkel", 1000, 6),
-    ("Ubegrenset Normal", 2500, 9),
-    ("Ubegrenset Optimal", 5000, 13),
-    ("Ubegrenset Maksimal", 10000, 20),
+    ("Fast 5GB", 200, 3),
+    ("Fast 10GB", 500, 6),
+    ("Ubegrenset Enkel", 1000, 10),
+    ("Ubegrenset Normal", 2500, 15),
+    ("Ubegrenset Optimal", 5000, 22),
+    ("Ubegrenset Maksimal", 10000, 35),
 ]
 
 # Extra upgrades
 extras = {
     "Nettvern": (150, "+10% auto-inntekt"),
     "Nettvern+": (300, "+20% auto-inntekt"),
-    "Safe": (500, "+1/sek og beskyttelse"),
+    "Safe": (900, "Reduserer sjansen for virus ved boost"),
     "Min Sky": (600, "Dobler klikk-verdi (kun postpaid)"),
     "Se Hvem": (400, "+2/sek auto-inntekt"),
-    "Data-sim i ruter": (800, "Aktiverbar boost: Dobler auto-inntekt i 30 sek (krever ruter)"),
-    "Tvilling": (1200, "Krever 2. telefon – Dobler datapakker per klikk")
+    "Data-sim i ruter": (800, "Aktiverbar boost: Dobler auto-inntekt i 30 sek (krever ruter, virus kan oppstå)"),
+    "Tvilling": (1200, "Krever 2. telefon – Dobler datapakker per klikk, men risikerer virus ved boost")
 }
 
 # Phones to buy
 phones = [
     ("Doro Phone", 0, 1),
-    ("iPhone 7", 300, 1.2),
-    ("iPhone 8", 600, 1.4),
-    ("iPhone X", 900, 1.6),
-    ("iPhone 11", 1300, 1.8),
-    ("iPhone 12", 1800, 2.0),
-    ("iPhone 13", 2500, 2.2),
-    ("iPhone 14", 3200, 2.5),
-    ("iPhone 15", 4000, 2.8),
-    ("iPhone 16", 5000, 3.0),
-    ("iPhone 16 Pro", 7000, 3.5),
-    ("iPhone 16 Pro Max", 10000, 4.0)
+    ("iPhone 7", 300, 2),
+    ("iPhone 8", 600, 3),
+    ("iPhone X", 900, 4),
+    ("iPhone 11", 1300, 5),
+    ("iPhone 12", 1800, 6),
+    ("iPhone 13", 2500, 7),
+    ("iPhone 14", 3200, 8),
+    ("iPhone 15", 4000, 9),
+    ("iPhone 16", 5000, 10),
+    ("iPhone 16 Pro", 7000, 12),
+    ("iPhone 16 Pro Max", 10000, 15)
 ]
 
 # Update auto income over time
@@ -80,11 +83,14 @@ if st.button("📲 Klikk for datapakke"):
     st.session_state.data += st.session_state.click_power * st.session_state.tvilling_click_boost
     st.session_state.clicks += 1
 
+# Show current subscription
+st.subheader(f"📶 Nåværende abonnement: {st.session_state.subscription_level}")
+
 # Show next subscription goal
 current_index = next(i for i, s in enumerate(subscriptions) if s[0] == st.session_state.subscription_level)
 if current_index + 1 < len(subscriptions):
     next_sub = subscriptions[current_index + 1]
-    st.info(f"🎯 Neste abonnement: {next_sub[0]} ({next_sub[1]} datapakker) – Gir {next_sub[2]} auto-inntekt/sek")
+    st.info(f"🎯 Neste: {next_sub[0]} ({next_sub[1]} datapakker) – Gir {next_sub[2]} auto-inntekt/sek")
 else:
     st.success("🏆 Du har nådd Ubegrenset Maksimal!")
 
@@ -99,12 +105,15 @@ if current_index + 1 < len(subscriptions):
             if "Min Sky" in st.session_state.upgrades and "Fast 2GB" not in next_sub[0]:
                 st.session_state.click_power = phones[st.session_state.phone_index][2] * 2
 
+# Show current phone
+current_phone = phones[st.session_state.phone_index]
+st.subheader(f"📱 Nåværende telefon: {current_phone[0]} – {current_phone[2]} per klikk")
+
 # Buy phones
-st.subheader("📱 Telefoner")
 if not st.session_state.has_second_phone:
     if st.session_state.phone_index + 1 < len(phones):
         next_phone = phones[st.session_state.phone_index + 1]
-        st.info(f"📶 Neste telefon: {next_phone[0]} ({next_phone[1]} datapakker) – Gir {next_phone[2]} per klikk")
+        st.info(f"📶 Neste: {next_phone[0]} ({next_phone[1]} datapakker) – Gir {next_phone[2]} per klikk")
         if st.session_state.data >= next_phone[1]:
             if st.button(f"Kjøp {next_phone[0]} ({next_phone[1]})", help=f"Gir {next_phone[2]} datapakker per klikk"):
                 st.session_state.data -= next_phone[1]
@@ -143,7 +152,7 @@ for name, (cost, desc) in extras.items():
                 elif name == "Nettvern+":
                     st.session_state.auto_income *= 1.20
                 elif name == "Safe":
-                    st.session_state.auto_income += 1
+                    st.session_state.safe_protection = 0.8  # Reduserer risiko for virus til 20%
                 elif name == "Min Sky" and "Fast 2GB" not in st.session_state.subscription_level:
                     st.session_state.click_power *= 2
                 elif name == "Se Hvem":
@@ -165,10 +174,21 @@ if "Data-sim i ruter" in st.session_state.upgrades and st.session_state.has_rout
     cooldown = 60  # sekunder
     active_duration = 30
     since_activation = now - st.session_state.router_cooldown
-    if since_activation >= cooldown:
+    virus_chance = 0.4 * (1 - st.session_state.safe_protection)
+
+    if st.session_state.router_blocked:
+        st.error("🚫 Boost deaktivert – virus påvist! Vent til cooldown er over.")
+        if since_activation >= cooldown:
+            st.session_state.router_blocked = False
+    elif since_activation >= cooldown:
         if st.button("📡 Aktiver Ruter Boost (30 sek dobbel auto-inntekt)"):
             st.session_state.router_cooldown = now
             st.session_state.auto_income *= 2
+            if random.random() < virus_chance:
+                st.session_state.router_blocked = True
+                st.warning("⚠️ Boost aktivert, men du fikk virus! Funksjonen låses i 60 sekunder.")
+            else:
+                st.success("🚀 Ruter-boost aktiv!")
             st.experimental_rerun()
     elif since_activation < active_duration:
         st.success("🚀 Ruter-boost aktiv!")
@@ -176,6 +196,4 @@ if "Data-sim i ruter" in st.session_state.upgrades and st.session_state.has_rout
         remaining = int(cooldown - since_activation)
         st.caption(f"⏳ Ruter nedkjøling: {remaining} sek")
 
-# Show current phone
-st.caption(f"📱 Nåværende telefon: {phones[st.session_state.phone_index][0]} ({phones[st.session_state.phone_index][2]} per klikk uten boost)")
 st.caption("Laget av deg – Telenor Clicker")
