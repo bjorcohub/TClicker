@@ -26,9 +26,11 @@ if 'data' not in st.session_state:
     st.session_state.tvilling_blocked = False
     st.session_state.safe_protection = 0
 
-# Testknapp for å få 1000 datapakker
-if st.button("🐞 Gi meg 1000 datapakker (TEST)"):
+# Testknapp for raskere utvikling
+if st.button("💾 Gi meg 1000 datapakker (test)"):
     st.session_state.data += 1000
+    st.success("Du fikk 1000 datapakker!")
+
 
 # Subscriptions, phones og upgrades definisjoner (kortet her for plass)
 subscriptions = [("Kontantkort", 0, 1), ("Fast 2GB", 50, 1), ("Fast 5GB", 200, 3), ("Fast 10GB", 500, 6),
