@@ -81,7 +81,7 @@ clicks_per_minute = (st.session_state.clicks / click_elapsed * 60) if click_elap
 
 # === METRICS ===
 st.metric("📦 Datapakker", int(st.session_state.data))
-st.metric("🖱️ Klikk per minutt", f"{clicks_per_minute:.1f}")
+#st.metric("🖱️ Klikk per minutt", f"{clicks_per_minute:.1f}")
 st.metric("🌀 Auto-inntekt per sekund", f"{st.session_state.auto_income:.1f}")
 st.metric("📲 Datapakker per klikk", f"{st.session_state.click_power:.1f}")
 
@@ -100,7 +100,7 @@ def handle_boost(name):
 
         if st.session_state.router_blocked:
             remaining = int(cooldown - elapsed)
-            st.error(f"🚫 Boost deaktivert pga virus! ({remaining}s igjen)")
+            st.error(f"🚫 Ruter deaktivert pga virus! ({remaining}s igjen)")
         elif elapsed >= cooldown:
             if st.button("📡 Aktiver Ruter Boost"):
                 st.session_state.router_cooldown = now
@@ -227,7 +227,7 @@ for name, (cost, desc) in extras.items():
                     st.session_state.has_router = True
 
 # === TESTBUTTON (valgfritt)
-if st.button("💾 Test: +1000 datapakker"):
-    st.session_state.data += 1000
+#if st.button("💾 Test: +1000 datapakker"):
+    #st.session_state.data += 1000
 
 st.caption("Laget av deg – Telenor Clicker")
