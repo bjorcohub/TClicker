@@ -3,34 +3,33 @@ import time
 import random
 
 st.set_page_config(page_title="Telenor Clicker", layout="centered")
-st.title("📱 Telenor Clicker")
+st.markdown("<h1 style='text-align: center;'>📱 Telenor Clicker</h1>", unsafe_allow_html=True)
 
-# === SESSION INIT ===
-if "data" not in st.session_state:
-    st.session_state.update({
-        "data": 0,
-        "clicks": 0,
-        "click_power": 1,
-        "base_click_power": 1,
-        "auto_income": 0,
-        "base_auto_income": 0,
-        "subscription_level": "Kontantkort",
-        "upgrades": set(),
-        "last_update": time.time(),
-        "click_start_time": time.time(),
-        "phone_index": 0,
-        "has_router": False,
-        "router_cooldown": 0,
-        "router_boost_start": 0,
-        "router_blocked": False,
-        "router_virus": False,
-        "has_second_phone": False,
-        "tvilling_cooldown": 0,
-        "tvilling_boost_start": 0,
-        "tvilling_blocked": False,
-        "tvilling_virus": False,
-        "safe_protection": 0
-    })
+# === INITIALIZE ===
+if 'data' not in st.session_state:
+    st.session_state.data = 0
+    st.session_state.auto_income = 0
+    st.session_state.base_auto_income = 0
+    st.session_state.click_power = 1
+    st.session_state.base_click_power = 1
+    st.session_state.subscription_level = "Kontantkort"
+    st.session_state.upgrades = set()
+    st.session_state.last_update = time.time()
+    st.session_state.clicks = 0
+    st.session_state.click_start_time = time.time()
+    st.session_state.phone_index = 0
+    st.session_state.has_router = False
+    st.session_state.router_cooldown = 0
+    st.session_state.router_boost_time = 0
+    st.session_state.router_blocked = False
+    st.session_state.router_virus_active = False
+    st.session_state.has_second_phone = False
+    st.session_state.tvilling_click_boost = 1
+    st.session_state.tvilling_cooldown = 0
+    st.session_state.tvilling_boost_time = 0
+    st.session_state.tvilling_blocked = False
+    st.session_state.tvilling_virus_active = False
+    st.session_state.safe_protection = 0
 
 # === CONSTANTS ===
 subscriptions = [
@@ -39,7 +38,7 @@ subscriptions = [
     ("Fast 5GB", 200, 3),
     ("Fast 10GB", 500, 6),
     ("Ubegrenset Enkel", 1000, 10),
-    ("Ubegrenset SPLITT", 2500, 15),
+    ("Ubegrenset Normal", 2500, 15),
     ("Ubegrenset Optimal", 5000, 22),
     ("Ubegrenset Maksimal", 10000, 35),
 ]
@@ -56,160 +55,163 @@ phones = [
     ("iPhone 15", 4000, 9),
     ("iPhone 16", 5000, 10),
     ("iPhone 16 Pro", 7000, 12),
-    ("iPhone 16 Pro Max", 10000, 15),
+    ("iPhone 16 Pro Max", 10000, 15)
 ]
 
 extras = {
     "Nettvern": (150, "+10% auto-inntekt"),
     "Nettvern+": (300, "+20% auto-inntekt"),
-    "Safe": (900, "Reduserer sjanse for virus"),
-    "Min Sky": (600, "Dobler klikkverdi (kun postpaid)"),
+    "Safe": (900, "Reduserer sjansen for virus"),
+    "Min Sky": (600, "Dobler klikk-verdi (kun postpaid)"),
     "Se Hvem": (400, "+2/sek auto-inntekt"),
-    "Data-sim i ruter": (800, "Aktiver boost: Dobler auto-inntekt midlertidig"),
-    "Tvilling": (1200, "Krever 2. telefon – Dobler klikk midlertidig"),
+    "Data-sim i ruter": (800, "Boost: Dobler auto-inntekt i 30 sek (virus mulig)"),
+    "Tvilling": (1200, "Krever 2. telefon – Dobler klikk i 30 sek (virus mulig)"),
+    "SPLITT": (2500, "Gir 5% mer auto-inntekt permanent")
 }
 
-# === TIME UPDATE ===
+# === LOGIC ===
 now = time.time()
 elapsed = now - st.session_state.last_update
 st.session_state.data += elapsed * st.session_state.auto_income
 st.session_state.last_update = now
 
-# === METRICS ===
-clicks_per_minute = (
-    (st.session_state.clicks / (now - st.session_state.click_start_time)) * 60
-    if now - st.session_state.click_start_time > 0
-    else 0
-)
+click_elapsed = now - st.session_state.click_start_time
+clicks_per_minute = (st.session_state.clicks / click_elapsed * 60) if click_elapsed > 0 else 0
 
+# === METRICS ===
 col1, col2, col3 = st.columns(3)
 col1.metric("📦 Datapakker", int(st.session_state.data))
 col2.metric("🖱️ Klikk/min", f"{clicks_per_minute:.1f}")
-col3.metric("⚡ Auto-inntekt", f"{st.session_state.auto_income:.1f}/s")
+col3.metric("🌀 Auto/s", f"{st.session_state.auto_income:.1f}")
+
+st.markdown(
+    f"<h2 style='text-align:center; color:#2E86AB;'>📲 {st.session_state.click_power:.1f} datapakker per klikk</h2>",
+    unsafe_allow_html=True
+)
 
 # === CLICK ===
-if st.button("📲 Klikk for datapakke", use_container_width=True):
+click_btn = st.button("📲 Klikk for datapakke", key="click_button")
+if click_btn:
     st.session_state.data += st.session_state.click_power
     st.session_state.clicks += 1
+    st.balloons()
 
-st.caption(f"Per klikk: {st.session_state.click_power:.1f}")
-
-# === BOOST SYSTEM ===
-def boost_logic(name, cooldown, duration, boost_factor, virus_factor):
-    now = time.time()
-    if name == "router":
-        cooldown_start = st.session_state.router_cooldown
-        boost_start = st.session_state.router_boost_start
-        virus_active = st.session_state.router_virus
-        blocked = st.session_state.router_blocked
-        base = st.session_state.base_auto_income
-        value_key = "auto_income"
-        virus_flag = "router_virus"
-    else:
-        cooldown_start = st.session_state.tvilling_cooldown
-        boost_start = st.session_state.tvilling_boost_start
-        virus_active = st.session_state.tvilling_virus
-        blocked = st.session_state.tvilling_blocked
-        base = st.session_state.base_click_power
-        value_key = "click_power"
-        virus_flag = "tvilling_virus"
-
+# === BOOST ===
+def handle_boost(name):
+    cooldown = 60
+    duration = 30
     chance = 0.7 if st.session_state.safe_protection == 0 else 0.35
+    now = time.time()
 
-    if now < boost_start + duration:
-        remaining = int(boost_start + duration - now)
-        st.success(f"🚀 {name.capitalize()} boost aktiv ({remaining}s igjen)")
-    elif virus_active:
-        setattr(st.session_state, value_key, base)
-        setattr(st.session_state, virus_flag, False)
-    elif now < cooldown_start + cooldown:
-        remaining = int(cooldown_start + cooldown - now)
-        st.warning(f"⏳ {name.capitalize()} tilgjengelig om {remaining}s")
-    else:
-        if st.button(f"⚡ Aktiver {name.capitalize()} Boost"):
-            setattr(st.session_state, f"{name}_cooldown", now)
-            setattr(st.session_state, f"{name}_boost_start", now)
-            if random.random() < chance:
-                setattr(st.session_state, f"{name}_blocked", True)
-                setattr(st.session_state, virus_flag, True)
-                setattr(st.session_state, value_key, base * virus_factor)
-                st.error(f"💀 Virus! {name.capitalize()} gir nå bare 2/3 effekt!")
-            else:
-                setattr(st.session_state, value_key, base * boost_factor)
+    if name == "router":
+        elapsed = now - st.session_state.router_cooldown
+        active = now - st.session_state.router_boost_time < duration
 
-# === BOOST BUTTONS ===
+        if active:
+            remaining = int(duration - (now - st.session_state.router_boost_time))
+            st.success(f"🚀 Ruter aktiv ({remaining}s igjen)")
+        elif elapsed < cooldown:
+            remaining = int(cooldown - elapsed)
+            st.info(f"⏳ Ruter klar om {remaining}s")
+        else:
+            if st.button("📡 Aktiver Ruter Boost"):
+                st.session_state.router_cooldown = now
+                st.session_state.router_boost_time = now
+                if random.random() < chance:
+                    st.session_state.auto_income = st.session_state.base_auto_income * 0.66
+                    st.warning("☣️ Virus! Auto-inntekt redusert")
+                else:
+                    st.session_state.auto_income = st.session_state.base_auto_income * 2
+    elif name == "tvilling":
+        elapsed = now - st.session_state.tvilling_cooldown
+        active = now - st.session_state.tvilling_boost_time < duration
+
+        if active:
+            remaining = int(duration - (now - st.session_state.tvilling_boost_time))
+            st.success(f"🚀 Tvilling aktiv ({remaining}s igjen)")
+        elif elapsed < cooldown:
+            remaining = int(cooldown - elapsed)
+            st.info(f"⏳ Tvilling klar om {remaining}s")
+        else:
+            if st.button("📶 Aktiver Tvilling Boost"):
+                st.session_state.tvilling_cooldown = now
+                st.session_state.tvilling_boost_time = now
+                if random.random() < chance:
+                    st.session_state.click_power = st.session_state.base_click_power * 0.66
+                    st.warning("☣️ Virus! Klikk redusert")
+                else:
+                    st.session_state.click_power = st.session_state.base_click_power * 2
+
 if "Data-sim i ruter" in st.session_state.upgrades and st.session_state.has_router:
-    boost_logic("router", cooldown=60, duration=30, boost_factor=2, virus_factor=0.66)
-
+    handle_boost("router")
 if "Tvilling" in st.session_state.upgrades and st.session_state.has_second_phone:
-    boost_logic("tvilling", cooldown=60, duration=30, boost_factor=2, virus_factor=0.66)
+    handle_boost("tvilling")
 
-# === UPGRADE SECTION ===
+# === SUBSCRIPTION ===
 st.subheader("📶 Abonnement")
-current_sub = next(i for i, s in enumerate(subscriptions) if s[0] == st.session_state.subscription_level)
-if current_sub + 1 < len(subscriptions):
-    name, cost, income = subscriptions[current_sub + 1]
-    st.info(f"Neste: {name} ({cost} datapakker) – {income}/sek")
-    if st.session_state.data >= cost:
-        if st.button(f"🔼 Oppgrader til {name}"):
-            st.session_state.data -= cost
-            st.session_state.subscription_level = name
-            st.session_state.auto_income = income
-            st.session_state.base_auto_income = income
-            if "Min Sky" in st.session_state.upgrades:
-                st.session_state.click_power = st.session_state.base_click_power * 2
+current_index = next(i for i, s in enumerate(subscriptions) if s[0] == st.session_state.subscription_level)
+if current_index + 1 < len(subscriptions):
+    next_sub = subscriptions[current_index + 1]
+    st.info(f"🎯 Neste: {next_sub[0]} ({next_sub[1]}) – Gir {next_sub[2]}/sek")
+    if st.session_state.data >= next_sub[1]:
+        if st.button(f"⬆️ Oppgrader til {next_sub[0]} ({next_sub[1]})"):
+            st.session_state.data -= next_sub[1]
+            st.session_state.subscription_level = next_sub[0]
+            st.session_state.auto_income = next_sub[2]
+            st.session_state.base_auto_income = next_sub[2]
 
-# === PHONE SECTION ===
+# === PHONES ===
 st.subheader("📱 Telefon")
-phone_name, phone_cost, phone_power = phones[st.session_state.phone_index]
-st.write(f"Nåværende: {phone_name} – {phone_power}/klikk")
+current_phone = phones[st.session_state.phone_index]
+st.info(f"Nåværende: {current_phone[0]} – {current_phone[2]}/klikk")
+
 if st.session_state.phone_index + 1 < len(phones):
-    name, cost, power = phones[st.session_state.phone_index + 1]
-    st.info(f"Neste: {name} ({cost} datapakker) – {power}/klikk")
-    if st.session_state.data >= cost:
-        if st.button(f"📲 Kjøp {name}"):
-            st.session_state.data -= cost
+    next_phone = phones[st.session_state.phone_index + 1]
+    if st.session_state.data >= next_phone[1]:
+        if st.button(f"📲 Kjøp {next_phone[0]} ({next_phone[1]})"):
+            st.session_state.data -= next_phone[1]
             st.session_state.phone_index += 1
-            st.session_state.base_click_power = power
-            st.session_state.click_power = power
+            new_power = phones[st.session_state.phone_index][2]
+            st.session_state.base_click_power = new_power
+            st.session_state.click_power = new_power
 
 # === SECOND PHONE FOR TVILLING ===
 if "Tvilling" in st.session_state.upgrades and not st.session_state.has_second_phone:
-    if st.session_state.data >= 2000:
-        if st.button("📱 Kjøp 2. telefon for Tvilling (2000)"):
-            st.session_state.data -= 2000
+    phone2_price = 2000
+    if st.session_state.data >= phone2_price:
+        if st.button(f"📱 Kjøp 2. telefon for Tvilling ({phone2_price})"):
+            st.session_state.data -= phone2_price
             st.session_state.has_second_phone = True
-            st.success("✅ Tvilling aktivert!")
-    else:
-        st.warning("Du trenger 2000 datapakker for 2. telefon")
+            st.success("Tvilling aktivert!")
 
 # === EXTRAS ===
-st.subheader("🧩 Ekstrautstyr")
-for name, (price, desc) in extras.items():
-    if name not in st.session_state.upgrades:
-        if (name == "Safe") and not (
-            "Tvilling" in st.session_state.upgrades or "Data-sim i ruter" in st.session_state.upgrades
-        ):
-            continue
-        if st.session_state.data >= price:
-            if st.button(f"Kjøp {name} ({price})", help=desc):
-                st.session_state.data -= price
-                st.session_state.upgrades.add(name)
-                if name == "Nettvern":
-                    st.session_state.base_auto_income *= 1.1
-                elif name == "Nettvern+":
-                    st.session_state.base_auto_income *= 1.2
-                elif name == "Safe":
-                    st.session_state.safe_protection = 0.5
-                elif name == "Min Sky":
-                    st.session_state.click_power *= 2
-                elif name == "Se Hvem":
-                    st.session_state.base_auto_income += 2
-                elif name == "Data-sim i ruter":
-                    st.session_state.has_router = True
+st.subheader("🔧 Ekstrautstyr")
+for name, (cost, desc) in extras.items():
+    if name in st.session_state.upgrades:
+        st.markdown(f"<div style='color:green;'>✅ {name}</div>", unsafe_allow_html=True)
+    elif (name == "Safe") and ("Tvilling" not in st.session_state.upgrades and "Data-sim i ruter" not in st.session_state.upgrades):
+        continue
+    elif st.session_state.data >= cost:
+        if st.button(f"💎 Kjøp {name} ({cost})", help=desc):
+            st.session_state.data -= cost
+            st.session_state.upgrades.add(name)
+            if name == "Nettvern":
+                st.session_state.auto_income *= 1.10
+            elif name == "Nettvern+":
+                st.session_state.auto_income *= 1.20
+            elif name == "Safe":
+                st.session_state.safe_protection = 0.5
+            elif name == "Min Sky":
+                st.session_state.click_power *= 2
+            elif name == "Se Hvem":
+                st.session_state.auto_income += 2
+            elif name == "Data-sim i ruter":
+                st.session_state.has_router = True
+            elif name == "SPLITT":
+                st.session_state.auto_income *= 1.05
 
-# === TESTING BUTTON ===
-if st.button("💾 Test: +1000 datapakker"):
+# === DEBUG ===
+if st.button("🧪 +1000 datapakker"):
     st.session_state.data += 1000
 
 st.caption("Laget av deg – Telenor Clicker")
