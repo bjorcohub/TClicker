@@ -107,12 +107,19 @@ def handle_boost(name):
             if remaining > 0:
                 st.error(f"🚫 Ruter deaktivert pga virus! ({remaining}s igjen)")
             else:
-                # Virus er over, tilbakestill
+                # Tilbakestill etter virus
                 st.session_state.router_blocked = False
                 st.session_state.router_virus_active = False
                 st.session_state.auto_income = st.session_state.base_auto_income
                 st.session_state.router_boost_time = 0
 
+        elif 0 < boost_elapsed < duration:
+            remaining = int(duration - boost_elapsed)
+            st.success(f"🚀 Ruter-boost aktiv ({remaining}s igjen)")
+        elif duration <= boost_elapsed < cooldown:
+            st.session_state.auto_income = st.session_state.base_auto_income
+            remaining = int(cooldown - boost_elapsed)
+            st.info(f"🔄 Ruter boost tilgjengelig om {remaining}s")
         elif elapsed >= cooldown:
             if st.button("📡 Aktiver Ruter Boost"):
                 st.session_state.router_cooldown = now
@@ -125,13 +132,8 @@ def handle_boost(name):
                         st.info("💡 Tips: Kjøp Safe for lavere risiko for virus.")
                 else:
                     st.session_state.auto_income = st.session_state.base_auto_income * 2
-
-        elif 0 < boost_elapsed < duration:
-            remaining = int(duration - boost_elapsed)
-            st.success(f"🚀 Ruter-boost aktiv ({remaining}s igjen)")
         else:
-            st.session_state.auto_income = st.session_state.base_auto_income
-            st.session_state.router_boost_time = 0
+            st.info("🔄 Venter på at boost skal bli tilgjengelig...")
 
     elif name == "tvilling":
         elapsed = now - st.session_state.tvilling_cooldown
@@ -142,12 +144,18 @@ def handle_boost(name):
             if remaining > 0:
                 st.error(f"🚫 Tvilling-boost låst pga virus! ({remaining}s igjen)")
             else:
-                # Virus er over, tilbakestill
                 st.session_state.tvilling_blocked = False
                 st.session_state.tvilling_virus_active = False
                 st.session_state.click_power = st.session_state.base_click_power
                 st.session_state.tvilling_boost_time = 0
 
+        elif 0 < boost_elapsed < duration:
+            remaining = int(duration - boost_elapsed)
+            st.success(f"🚀 Tvilling-boost aktiv ({remaining}s igjen)")
+        elif duration <= boost_elapsed < cooldown:
+            st.session_state.click_power = st.session_state.base_click_power
+            remaining = int(cooldown - boost_elapsed)
+            st.info(f"🔄 Tvilling boost tilgjengelig om {remaining}s")
         elif elapsed >= cooldown:
             if st.button("📶 Aktiver Tvilling Boost"):
                 st.session_state.tvilling_cooldown = now
@@ -160,13 +168,9 @@ def handle_boost(name):
                         st.info("💡 Tips: Kjøp Safe for lavere risiko for virus.")
                 else:
                     st.session_state.click_power = st.session_state.base_click_power * 2
-
-        elif 0 < boost_elapsed < duration:
-            remaining = int(duration - boost_elapsed)
-            st.success(f"🚀 Tvilling-boost aktiv ({remaining}s igjen)")
         else:
-            st.session_state.click_power = st.session_state.base_click_power
-            st.session_state.tvilling_boost_time = 0
+            st.info("🔄 Venter på at boost skal bli tilgjengelig...")
+
 
 # === BOOST KNAPPER UNDER KLIKK ===
 if "Data-sim i ruter" in st.session_state.upgrades and st.session_state.has_router:
