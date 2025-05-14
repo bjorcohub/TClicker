@@ -3,7 +3,7 @@ import time
 import random
 
 st.set_page_config(page_title="📱 Telenor Clicker", layout="centered")
-st.markdown(\"""<h1 style='text-align: center;'>📱 Telenor Clicker</h1>\""", unsafe_allow_html=True)
+st.markdown("""<h1 style='text-align: center;'>📱 Telenor Clicker</h1>""", unsafe_allow_html=True)
 
 # === INIT ===
 if 'data' not in st.session_state:
