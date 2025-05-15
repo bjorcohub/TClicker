@@ -228,7 +228,7 @@ if "Tvilling" in st.session_state.upgrades and not st.session_state.has_second_p
             st.success("Tvilling aktivert!")
 
 # === TEST ===
-if st.button("💾 +1000 datapakker (test)"):
+#if st.button("💾 +1000 datapakker (test)"):
     st.session_state.data += 1000
 
 st.caption("Laget av deg – Telenor Clicker")
